@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>商品一覧</h2>
+<table>
+    <thead>
+        <tr>
+            <th>商品ID</th>
+            <th>商品名</th>
+            <th>カテゴリーID</th>
+            <th>価格</th>
+            <th>商品画像</th>
+            <th>特記事項</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in products %}
+        <tr>
+            <td>{{ product['id'] }}</td>
+            <td>{{ product['name'] }}</td>
+            <td>{{ product['category_id'] }}</td>
+            <td>{{ product['price'] }}円</td>
+            <td>
+                {% if product['image_url'] %}
+                <img src="{{ url_for('static', filename=product['image_url']) }}" alt="{{ product['name'] }}" width="100">
+                {% else %}
+                画像なし
+                {% endif %}
+            </td>
+            <td>{{ product['notes'] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

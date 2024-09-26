@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>在庫の入出庫</h2>
+<form method="POST" action="{{ url_for('stock_movement') }}">
+    <label for="product_id">商品:</label>
+    <select id="product_id" name="product_id" required>
+        {% for product in products %}
+        <option value="{{ product['id'] }}">{{ product['name'] }}</option>
+        {% endfor %}
+    </select><br>
+
+    <label for="quantity">数量:</label>
+    <input type="number" id="quantity" name="quantity" required><br>
+
+    <label for="movement_type">動作タイプ:</label>
+    <select id="movement_type" name="movement_type" required>
+        <option value="入庫">入庫</option>
+        <option value="出庫">出庫</option>
+    </select><br>
+
+    <label for="staff_id">担当者:</label>
+    <select id="staff_id" name="staff_id" required>
+        {% for member in staff %}
+        <option value="{{ member['id'] }}">{{ member['name'] }}</option>
+        {% endfor %}
+    </select><br>
+
+    <input type="submit" value="在庫を更新">
+</form>
+
+{% if get_flashed_messages() %}
+    <ul>
+        {% for message in get_flashed_messages() %}
+            <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+{% endblock %}

@@ -7,17 +7,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <header>
-        <h1>喫茶店在庫管理システム</h1>
-        <nav>
-            <a href="{{ url_for('product_input') }}">商品入力</a>
-        </nav>
-    </header>
+    {% include 'header.html' %}
+    
     <main>
         {% block content %}{% endblock %}
     </main>
-    <footer>
-        <p>&copy; 2024 喫茶店</p>
-    </footer>
+    
+    {% include 'footer.html' %}
 </body>
 </html>

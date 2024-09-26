@@ -11,7 +11,10 @@ header {
     padding: 10px;
     text-align: center;
 }
-
+footer{
+    float:right;
+    padding:10px;
+}
 nav a {
     color: white;
     margin: 0 15px;
@@ -59,4 +62,25 @@ input[type="submit"]:hover {
 ul {
     list-style-type: none;
     padding: 0;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+th {
+    background-color: #f4f4f4;
+}
+
+img {
+    max-width: 100px;
+    height: auto;
+    border-radius: 5px;
 }

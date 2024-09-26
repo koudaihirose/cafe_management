@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>入出庫履歴</h2>
+<table>
+    <thead>
+        <tr>
+            <th>入出庫ID</th>
+            <th>商品名</th>
+            <th>数量</th>
+            <th>日付</th>
+            <th>担当者</th>
+            <th>動作タイプ</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for movement in movements %}
+        <tr>
+            <td>{{ movement['id'] }}</td>
+            <td>{{ movement['product_name'] }}</td>
+            <td>{{ movement['quantity'] }}</td>
+            <td>{{ movement['movement_date'] }}</td>
+            <td>{{ movement['staff_name'] }}</td>
+            <td>{{ movement['movement_type'] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
