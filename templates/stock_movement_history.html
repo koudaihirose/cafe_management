@@ -11,6 +11,7 @@
             <th>日付</th>
             <th>担当者</th>
             <th>動作タイプ</th>
+            <th>操作</th>
         </tr>
     </thead>
     <tbody>
@@ -22,6 +23,12 @@
             <td>{{ movement['movement_date'] }}</td>
             <td>{{ movement['staff_name'] }}</td>
             <td>{{ movement['movement_type'] }}</td>
+            <td>
+                <a href="{{ url_for('stock_movement_edit', id=movement['id']) }}">編集</a>
+                <form action="{{ url_for('stock_movement_delete', id=movement['id']) }}" method="post" style="display:inline;">
+                    <button type="submit" onclick="return confirm('本当に削除しますか？')">削除</button>
+                </form>
+            </td>
         </tr>
         {% endfor %}
     </tbody>

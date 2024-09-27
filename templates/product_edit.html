@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>商品編集</h2>
+<form method="post" enctype="multipart/form-data">
+    <label for="name">商品名</label>
+    <input type="text" name="name" value="{{ product['name'] }}" required>
+
+    <label for="category_id">カテゴリーID</label>
+    <input type="number" name="category_id" value="{{ product['category_id'] }}" required>
+
+    <label for="price">価格</label>
+    <input type="text" name="price" value="{{ product['price'] }}" required>
+
+    <label for="image_file">商品画像</label>
+    <input type="file" name="image_file">
+
+    <label for="notes">特記事項</label>
+    <textarea name="notes">{{ product['notes'] }}</textarea>
+
+    <input type="submit" value="更新">
+</form>
+{% endblock %}

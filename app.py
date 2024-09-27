@@ -53,9 +53,65 @@ def product_input():
 @app.route('/product/list', methods=['GET'])
 def product_list():
     conn = get_db_connection()
-    products = conn.execute('SELECT * FROM PRODUCT').fetchall()
+    products = conn.execute('SELECT * FROM PRODUCT WHERE is_deleted = 0').fetchall()
     conn.close()
     return render_template('product_list.html', products=products)
+
+# 商品編集ページの表示と編集処理
+@app.route('/product/edit/<int:id>', methods=['GET', 'POST'])
+def product_edit(id):
+    conn = get_db_connection()
+    product = conn.execute('SELECT * FROM PRODUCT WHERE id = ?', (id,)).fetchone()
+
+    if request.method == 'POST':
+        name = request.form['name']
+        category_id = request.form['category_id']
+        price = request.form['price']
+        notes = request.form['notes']
+        image_file = request.files['image_file']
+
+        if not name or not category_id or not price:
+            flash('商品名とカテゴリーID、価格は必須です！')
+            return redirect(url_for('product_edit', id=id))
+
+        # 画像の更新処理
+        if image_file:
+            filename = image_file.filename
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            image_file.save(image_path)
+            image_url = f'uploads/{filename}'
+        else:
+            image_url = product['image_url']
+
+        conn.execute('UPDATE PRODUCT SET name = ?, category_id = ?, price = ?, image_url = ?, notes = ? WHERE id = ?',
+                     (name, category_id, price, image_url, notes, id))
+        conn.commit()
+        conn.close()
+        flash('商品が正常に更新されました！')
+        return redirect(url_for('product_list'))
+
+    conn.close()
+    return render_template('product_edit.html', product=product)
+
+# 商品の削除
+@app.route('/product/delete/<int:id>', methods=['POST'])
+def product_delete(id):
+    conn = get_db_connection()
+    conn.execute('UPDATE PRODUCT SET is_deleted = 1 WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+    flash('商品が削除されました！（論理削除）')
+    return redirect(url_for('product_list'))
+
+# 削除された商品の復元
+@app.route('/product/restore/<int:id>', methods=['POST'])
+def product_restore(id):
+    conn = get_db_connection()
+    conn.execute('UPDATE PRODUCT SET is_deleted = 0 WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+    flash('商品が復元されました！')
+    return redirect(url_for('product_list'))
 
 # 在庫の入出庫ページ
 @app.route('/stock/movement', methods=['GET', 'POST'])
@@ -86,6 +142,41 @@ def stock_movement():
     conn.close()
     return render_template('stock_movement.html', products=products, staff=staff)
 
+# 入出庫履歴の編集
+@app.route('/stock/movement/edit/<int:id>', methods=['GET', 'POST'])
+def stock_movement_edit(id):
+    conn = get_db_connection()
+    movement = conn.execute('SELECT * FROM STOCK_MOVEMENT WHERE id = ?', (id,)).fetchone()
+    products = conn.execute('SELECT id, name FROM PRODUCT').fetchall()
+    staff = conn.execute('SELECT id, name FROM STAFF').fetchall()
+
+    if request.method == 'POST':
+        product_id = request.form['product_id']
+        quantity = int(request.form['quantity'])
+        staff_id = request.form['staff_id']
+        movement_type = request.form['movement_type']
+        movement_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        conn.execute('UPDATE STOCK_MOVEMENT SET product_id = ?, quantity = ?, movement_date = ?, staff_id = ?, movement_type = ? WHERE id = ?',
+                     (product_id, quantity, movement_date, staff_id, movement_type, id))
+        conn.commit()
+        conn.close()
+        flash('入出庫履歴が正常に更新されました！')
+        return redirect(url_for('stock_movement_history'))
+
+    conn.close()
+    return render_template('stock_movement_edit.html', movement=movement, products=products, staff=staff)
+
+# 入出庫履歴の削除
+@app.route('/stock/movement/delete/<int:id>', methods=['POST'])
+def stock_movement_delete(id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM STOCK_MOVEMENT WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+    flash('入出庫履歴が削除されました！')
+    return redirect(url_for('stock_movement_history'))
+
 # 入出庫履歴の表示
 @app.route('/stock/movement/history')
 def stock_movement_history():
@@ -99,7 +190,6 @@ def stock_movement_history():
     ''').fetchall()
     conn.close()
     return render_template('stock_movement_history.html', movements=movements)
-
 
 if __name__ == '__main__':
     app.run(debug=True)
