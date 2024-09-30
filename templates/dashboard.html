@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>ダッシュボード</h1>
+    <p>ようこそ、{{ staff_name }} さん！</p>
+    <p>あなたの役割は {{ staff_role }} です。</p>
+    <a href="{{ url_for('product_input') }}">商品を追加</a><br>
+    <a href="{{ url_for('product_list') }}">商品一覧</a><br>
+    <a href="{{ url_for('staff_register') }}">スタッフ登録</a><br>
+    <a href="{{ url_for('stock_movement') }}">在庫管理</a><br>
+    <a href="{{ url_for('logout') }}">ログアウト</a>
+{% endblock %}

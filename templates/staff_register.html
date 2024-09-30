@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>スタッフ登録</h1>
+
+    <form action="{{ url_for('staff_register') }}" method="POST">
+        <label for="name">スタッフ名:</label>
+        <input type="text" id="name" name="name" required><br>
+
+        <label for="password">パスワード:</label>
+        <input type="password" id="password" name="password" required><br>
+
+        <label for="role">役割:</label>
+        <input type="text" id="role" name="role" required><br>
+
+        <button type="submit">登録</button>
+    </form>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+{% endblock %}
+

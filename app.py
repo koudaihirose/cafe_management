@@ -2,6 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 import sqlite3
 import os
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import session
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -16,8 +18,49 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+# ログイン状態を確認するデコレーター
+def login_required(func):
+    def wrapper(*args, **kwargs):
+        if 'staff_id' not in session:
+            flash('ログインが必要です。')
+            return redirect(url_for('index'))
+        return func(*args, **kwargs)
+    wrapper.__name__ = func.__name__
+    return wrapper
+
+# トップページ（ログインフォームを配置）
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        name = request.form['name']
+        password = request.form['password']
+
+        # データベース接続
+        conn = get_db_connection()
+        staff = conn.execute('SELECT * FROM staff WHERE name = ?', (name,)).fetchone()
+        conn.close()
+
+        # スタッフが存在し、パスワードが一致するか確認
+        if staff and check_password_hash(staff['password'], password):
+            session['staff_id'] = staff['id']
+            session['staff_name'] = staff['name']
+            session['staff_role'] = staff['role']
+            flash('ログイン成功しました！')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('名前またはパスワードが正しくありません。')
+
+    return render_template('index.html')
+
+# ダッシュボードページ
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template('dashboard.html', staff_name=session['staff_name'], staff_role=session['staff_role'])
+
 # 商品入力ページの表示と入力処理
 @app.route('/product/new', methods=['GET', 'POST'])
+@login_required
 def product_input():
     if request.method == 'POST':
         name = request.form['name']
@@ -51,6 +94,7 @@ def product_input():
 
 # 商品一覧ページの表示
 @app.route('/product/list', methods=['GET'])
+@login_required
 def product_list():
     conn = get_db_connection()
     products = conn.execute('SELECT * FROM PRODUCT WHERE is_deleted = 0').fetchall()
@@ -59,6 +103,7 @@ def product_list():
 
 # 商品編集ページの表示と編集処理
 @app.route('/product/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def product_edit(id):
     conn = get_db_connection()
     product = conn.execute('SELECT * FROM PRODUCT WHERE id = ?', (id,)).fetchone()
@@ -95,6 +140,7 @@ def product_edit(id):
 
 # 商品の削除
 @app.route('/product/delete/<int:id>', methods=['POST'])
+@login_required
 def product_delete(id):
     conn = get_db_connection()
     conn.execute('UPDATE PRODUCT SET is_deleted = 1 WHERE id = ?', (id,))
@@ -105,6 +151,7 @@ def product_delete(id):
 
 # 削除された商品の復元
 @app.route('/product/restore/<int:id>', methods=['POST'])
+@login_required
 def product_restore(id):
     conn = get_db_connection()
     conn.execute('UPDATE PRODUCT SET is_deleted = 0 WHERE id = ?', (id,))
@@ -115,7 +162,7 @@ def product_restore(id):
 
 # 在庫の入出庫ページ
 @app.route('/stock/movement', methods=['GET', 'POST'])
-
+@login_required
 def stock_movement():
     conn = get_db_connection()
     products = conn.execute('SELECT id, name FROM PRODUCT').fetchall()  # 商品情報を取得
@@ -144,6 +191,7 @@ def stock_movement():
 
 # 入出庫履歴の編集
 @app.route('/stock/movement/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
 def stock_movement_edit(id):
     conn = get_db_connection()
     movement = conn.execute('SELECT * FROM STOCK_MOVEMENT WHERE id = ?', (id,)).fetchone()
@@ -169,6 +217,7 @@ def stock_movement_edit(id):
 
 # 入出庫履歴の削除
 @app.route('/stock/movement/delete/<int:id>', methods=['POST'])
+@login_required
 def stock_movement_delete(id):
     conn = get_db_connection()
     conn.execute('DELETE FROM STOCK_MOVEMENT WHERE id = ?', (id,))
@@ -179,6 +228,7 @@ def stock_movement_delete(id):
 
 # 入出庫履歴の表示
 @app.route('/stock/movement/history')
+@login_required
 def stock_movement_history():
     conn = get_db_connection()
     movements = conn.execute('''
@@ -190,6 +240,42 @@ def stock_movement_history():
     ''').fetchall()
     conn.close()
     return render_template('stock_movement_history.html', movements=movements)
+
+# スタッフ登録ページの表示と登録処理
+@app.route('/staff/register', methods=['GET', 'POST'])
+@login_required
+def staff_register():
+    if request.method == 'POST':
+        name = request.form['name']
+        password = request.form['password']
+        role = request.form['role']
+        
+        # 必須項目のチェック
+        if not name or not password or not role:
+            flash('すべてのフィールドを入力してください。')
+            return redirect(url_for('staff_register'))
+        
+        # パスワードのハッシュ化（必ずこれを使って保存）
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256', salt_length=16)
+
+        # データベースにスタッフ情報を保存
+        conn = get_db_connection()
+        conn.execute('INSERT INTO staff (name, password, role) VALUES (?, ?, ?)',
+                     (name, hashed_password, role))
+        conn.commit()
+        conn.close()
+        flash('スタッフが正常に登録されました！')
+        return redirect(url_for('staff_register'))
+
+    return render_template('staff_register.html')
+
+@app.route('/logout')
+def logout():
+    # セッションをクリアしてログアウト
+    session.clear()
+    flash('ログアウトしました。')
+    return redirect(url_for('index'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)
